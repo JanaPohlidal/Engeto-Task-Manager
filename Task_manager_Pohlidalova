@@ -1,0 +1,90 @@
+"""
+Projekt: Task Manager
+Task manager pro pridavani, zobrazeni a odstraneni ukolu
+Pripravila: Jana Pohlidalova
+"""
+
+
+ukoly = []
+
+def hlavni_menu():
+        while True:
+            print("\nSprávce úkolů - Hlavní menu")
+            print("1. Přidat nový úkol")
+            print("2. Zobrazit všechny úkoly")
+            print("3. Odstranit úkol")
+            print("4. Konec programu")
+
+            volba_menu = input("\nVyberte možnost (1-4): ")
+
+            if volba_menu == "1":
+                pridat_ukol()
+            elif volba_menu == "2":
+                zobrazit_ukoly()
+            elif volba_menu == "3":
+                odstranit_ukol()
+            elif volba_menu == "4":
+                print("Konec programu.")
+                break
+            else:
+                print("Neplatná volba! Zadejte číslo 1-4.")
+
+def pridat_ukol():
+    nazev_ukolu = input("Zadejte název úkolu: ")
+    while nazev_ukolu == "":
+          print("Název úkolu nemůže být prázdný! Zkuste to znovu.")
+          nazev_ukolu = input("Zadejte název úkolu: ")
+    
+    popis_ukolu = input("Zadejte popis úkolu: ")
+    while popis_ukolu == "":
+          print("Popis úkolu nemůže být prázdný! Zkuste to znovu.")
+          popis_ukolu = input("Zadejte popis úkolu: ")
+    
+    ukoly.append({"nazev": nazev_ukolu, "popis": popis_ukolu})
+    print(f"Úkol {nazev_ukolu} byl přidán.")
+    
+
+def zobrazit_ukoly():
+     print("\nSeznam úkolů:")
+     if len(ukoly) == 0:
+          print("Žádné úkoly k zobrazení")
+          return
+    
+     i = 0
+     for ukol in ukoly:
+          print(f"{i+1}. {ukol["nazev"]} - {ukol["popis"]}")
+          i = i + 1
+     
+
+def odstranit_ukol():
+    if len(ukoly) == 0:
+          print("\nSeznam úkolů je prázdný. Není co odstranit.")
+          return
+    i = 0
+    print("\nSeznam úkolů:")
+    for ukol in ukoly:
+        print(f"{i+1}. {ukol["nazev"]} - {ukol["popis"]}")
+        i = i + 1
+
+    try:   
+        vstup = input("\nZadejte číslo úkolu, který chcete odstranit: ")
+        cislo = int(vstup)
+
+        if 1 <= cislo <= len(ukoly):
+            odstraneny_ukol = ukoly.pop(cislo - 1)
+            print(f"Úkol '{odstraneny_ukol['nazev']}' byl odstraněn.")
+
+        else:
+            if len(ukoly) == 1:
+                print(f"Neplatné číslo! V seznamu máte pouze {len(ukoly)} úkol.")
+            else:
+                print(f"Neplatné číslo! Zadejte číslo mezi 1 a {len(ukoly)}.")
+
+    except ValueError:
+         print(f"Chyba: {vstup} není platné číslo.")
+            
+hlavni_menu()
+
+     
+                
+                
