@@ -3,12 +3,80 @@ Projekt: Task Manager
 Task manager pro pridavani, zobrazeni a odstraneni ukolu
 Pripravila: Jana Pohlidalova
 """
+import mysql.connector
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+def connect_to_db():
+    #Creates and returns a connection to the MySQL server and creates database if it does not exist.
+        
+    try:
+        db_host = os.getenv("DB_HOST", "localhost")
+        db_user = os.getenv("DB_USER")
+        db_password = os.getenv("DB_PASSWORD")
+        db_name = os.getenv("DB_NAME")
+
+        if not all([db_user, db_password, db_name]):
+             print ("Error: Database username, password and db name are not set in environment variables.")
+             return None
+        
+        conn = mysql.connector.connect(
+             host = db_host,
+             user = db_user,
+             password=db_password,
+             database=db_name
+        )
+        if conn.is_connected():
+             print(f"Successfully connected to database {db_name}.")
+             return conn
+        
+    except mysql.connector.Error as e:
+        print(f"Error while connecting to the MySQL server: {e}")
+        if e.errno == 1049:
+                print(f"Databse {db_name} does not exist. Attempting to create it...")
+                server_conn = None
+                try:
+                    server_conn = mysql.connector.connect(
+                        host = db_host,
+                        user = db_user,
+                        password = db_password
+                    )
+                    if server_conn.is_connected():
+                        cursor = server_conn.cursor()
+                        cursor.execute(f"CREATE DATABASE IF NOT EXISTS {db_name}")
+                        print(f"Database {db_name} successfully created")
+                        cursor.close()
+                        
+                        conn = mysql.connector.connect(
+                            host = db_host,
+                            user = db_user,
+                            password=db_password,
+                            database=db_name
+                        )
+                        if conn.is_connected():
+                            print("Successfully connected to the MySQL server.")
+                            return conn
+                    else:
+                         print(f"Error: Unable to connect to the MySQL server to create the database")
+                         return None
+                except mysql.connector.Error as server_e:
+                     print(f"Error while creating MySQL database {db_name}: {server_e}")
+                     return None
+                finally:
+                     if server_conn and server_conn.is_connected():
+                          server_conn.close()
+        else:
+            print(f"Error while connecting to MySQL database {db_name}: {e}")
+            return None
+          
 
 
 ukoly = []
 
 def hlavni_menu():
         while True:
+            connect_to_db()
             print("\nSprávce úkolů - Hlavní menu")
             print("1. Přidat nový úkol")
             print("2. Zobrazit všechny úkoly")
