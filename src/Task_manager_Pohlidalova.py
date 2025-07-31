@@ -78,10 +78,33 @@ def connect_to_db():
         else:
             print(f"Error while connecting to MySQL database {db_name}: {e}")
             return None
-          
 
+def create_ukoly_table_if_not_exists(conn):
+    if not conn or not conn.is_connected():
+        print("Error: No database connection available.")
+        return None    
+    
+    try:
+        cursor = conn.cursor()
+        create_table_query = """
+            CREATE TABLE IF NOT EXISTS ukoly (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                nazev VARCHAR(255) NOT NULL,
+                popis TEXT NOT NULL,
+                stav VARCHAR(50) DEFAULT 'nezahajeno'           
+                )
+            """
+    
+        cursor.execute(create_table_query)
+        conn.commit()
+        print("Table 'ukoly' is ready for use.")
+        cursor.close()
+        return True
+    
+    except mysql.connector.Error as e:
+         print(f"Error while creating table 'ukoly': {e}")
+         return False
 
-ukoly = []
 
 def hlavni_menu():
         while True:
