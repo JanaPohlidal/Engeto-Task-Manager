@@ -36,6 +36,7 @@ def connect_to_db():
         if e.errno == 1049:
                 print(f"Databse {db_name} does not exist. Attempting to create it...")
                 server_conn = None
+                conn = None
                 try:
                     server_conn = mysql.connector.connect(
                         host = db_host,
@@ -57,15 +58,23 @@ def connect_to_db():
                         if conn.is_connected():
                             print("Successfully connected to the MySQL server.")
                             return conn
+                        else:
+                             print ("Failed to connect after creating database.")
+                             if conn:
+                                  conn.close()
+                             return None
                     else:
                          print(f"Error: Unable to connect to the MySQL server to create the database")
                          return None
                 except mysql.connector.Error as server_e:
                      print(f"Error while creating MySQL database {db_name}: {server_e}")
+                     if conn and conn.is_connected():
+                          conn.close()
                      return None
                 finally:
                      if server_conn and server_conn.is_connected():
                           server_conn.close()
+                 
         else:
             print(f"Error while connecting to MySQL database {db_name}: {e}")
             return None
@@ -151,7 +160,8 @@ def odstranit_ukol():
     except ValueError:
          print(f"Chyba: {vstup} není platné číslo.")
             
-hlavni_menu()
+if __name__ == "__main__":
+     hlavni_menu()
 
      
                 
