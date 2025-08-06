@@ -24,8 +24,8 @@ def connect_to_db():
         conn = mysql.connector.connect(
              host = db_host,
              user = db_user,
-             password=db_password,
-             database=db_name
+             password = db_password,
+             database = db_name
         )
         if conn.is_connected():
              print(f"Successfully connected to database {db_name}.")
@@ -107,29 +107,41 @@ def create_ukoly_table_if_not_exists(conn):
 
 
 def hlavni_menu():
+        
+        conn = connect_to_db()
+        
         while True:
-            connect_to_db()
             print("\nSprávce úkolů - Hlavní menu")
-            print("1. Přidat nový úkol")
+            print("1. Přidat úkol")
             print("2. Zobrazit všechny úkoly")
-            print("3. Odstranit úkol")
-            print("4. Konec programu")
+            print("3. Aktualizovat úkol")
+            print("4. Odstranit úkol")
+            print("5. Konec programu")
 
             volba_menu = input("\nVyberte možnost (1-4): ")
 
             if volba_menu == "1":
-                pridat_ukol()
+                task_data = pridat_ukol_get_data_from_user()
+                if task_data:
+                     create_ukoly_table_if_not_exists(conn)
+                     pridat_ukol_save_task_to_database(conn, task_data)
             elif volba_menu == "2":
                 zobrazit_ukoly()
-            elif volba_menu == "3":
-                odstranit_ukol()
             elif volba_menu == "4":
+                odstranit_ukol()
+            elif volba_menu == "5":
                 print("Konec programu.")
                 break
             else:
                 print("Neplatná volba! Zadejte číslo 1-4.")
 
-def pridat_ukol():
+def pridat_ukol_get_data_from_user():
+    """
+    Prompts the user for a task name and description.
+    Returns a dictionary with the task data, or None if the input is canceled.
+    This function only handles user input, not database operations.
+    """
+
     nazev_ukolu = input("Zadejte název úkolu: ")
     while nazev_ukolu == "":
           print("Název úkolu nemůže být prázdný! Zkuste to znovu.")
@@ -139,10 +151,30 @@ def pridat_ukol():
     while popis_ukolu == "":
           print("Popis úkolu nemůže být prázdný! Zkuste to znovu.")
           popis_ukolu = input("Zadejte popis úkolu: ")
+
+    return {
+         "nazev": nazev_ukolu,
+         "popis": popis_ukolu         
+        }
     
-    ukoly.append({"nazev": nazev_ukolu, "popis": popis_ukolu})
-    print(f"Úkol {nazev_ukolu} byl přidán.")
+
+def pridat_ukol_save_task_to_database(conn, task_data):
+    if not conn or not conn.is_connected():
+         print ("Error: No database connection available to save the task.")
+         return
     
+    try:
+         cursor = conn.cursor()
+         SQLquery = "INSERT INTO ukoly (nazev, popis) VALUES (%s, %s)"
+         values = (task_data["nazev"], task_data["popis"])
+         cursor.execute(SQLquery, values)
+         conn.commit()
+         print(f"Úkol {task_data['nazev']} byl úspěšně přidán do databáze.")
+    except mysql.connector.Error as e:
+         print(f"Chyba při ukládání úkolu do databáze: {e}")
+    finally:
+         cursor.close()
+       
 
 def zobrazit_ukoly():
      print("\nSeznam úkolů:")
