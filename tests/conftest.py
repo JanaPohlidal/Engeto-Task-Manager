@@ -2,6 +2,7 @@ import pytest
 import mysql.connector
 import os
 from dotenv import load_dotenv
+from src.Task_manager_Pohlidalova import connect_to_db, create_ukoly_table_if_not_exists
 
 load_dotenv()
 
@@ -119,4 +120,12 @@ def prepare_testing_db_db_nonexistent():
         except Exception as e:
             print(f"Error: An unexpected error occurred during database cleanup: {e}")
 
-    
+@pytest.fixture
+def prepare_testing_db_and_table_ukoly(prepare_testing_db_db_exists):
+    conn = connect_to_db()
+    create_ukoly_table_if_not_exists(conn)
+
+    yield conn
+
+    if conn and conn.is_connected():
+        conn.close()
