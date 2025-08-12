@@ -15,7 +15,7 @@ def test_pridat_ukol_save_task_to_db(prepare_testing_db_and_table_ukoly):
     assert result is not None
     assert result[0] == "Integration test task"
     assert result[1] == "Description of the task for the integration test."
-    assert result[2] == "nezahajeno"
+    assert result[2] == "Nezahájeno"
      
 def test_pridat_ukol_with_long_nazev(prepare_testing_db_and_table_ukoly):
 

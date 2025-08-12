@@ -91,7 +91,7 @@ def create_ukoly_table_if_not_exists(conn):
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 nazev VARCHAR(255) NOT NULL,
                 popis TEXT NOT NULL,
-                stav VARCHAR(50) DEFAULT 'nezahajeno'           
+                stav VARCHAR(50) DEFAULT 'Nezahájeno'           
                 )
             """
     
@@ -126,7 +126,7 @@ def hlavni_menu():
                      create_ukoly_table_if_not_exists(conn)
                      pridat_ukol_save_task_to_database(conn, task_data)
             elif volba_menu == "2":
-                zobrazit_ukoly()
+                zobrazit_ukoly(conn)
             elif volba_menu == "4":
                 odstranit_ukol()
             elif volba_menu == "5":
@@ -176,18 +176,68 @@ def pridat_ukol_save_task_to_database(conn, task_data):
          cursor.close()
        
 
-def zobrazit_ukoly():
-     print("\nSeznam úkolů:")
-     if len(ukoly) == 0:
-          print("Žádné úkoly k zobrazení")
-          return
+def zobrazit_ukoly(conn):
+    if not conn or not conn.is_connected():
+         print ("Error: No database connection available to show the tasks.")
+         return
     
-     i = 0
-     for ukol in ukoly:
-          print(f"{i+1}. {ukol["nazev"]} - {ukol["popis"]}")
-          i = i + 1
-     
+    while True:
+         print("\n--- Zobrazení úkolů ---")
+         print("1. Zobrazit aktivní úkoly (Nezahájeno, Probíhá)")
+         print("2. Zobrazit dokončené úkoly")
+         print("3. Zobrazit všechny úkoly")
+         print("4. Zpět do hlavního menu")
+        
+         volba_filtru = input("Vyberte možnost (1-4): ")
+         
+         SQLquery = ""
+         params = None
+         nadpis = ""
 
+         if volba_filtru == "1":
+            SQLquery = "SELECT id, nazev, popis, stav FROM ukoly WHERE stav IN (%s, %s)"
+            params = ('Nezahájeno', 'Probíhá')
+            nadpis = "--- Seznam aktivních úkolů (Nezahájeno, Probíhá) ---"
+         elif volba_filtru == "2":
+            SQLquery = "SELECT id, nazev, popis, stav FROM ukoly WHERE stav = %s"
+            params = ('Hotovo',)
+            nadpis = "--- Seznam dokončených úkolů ---"
+         elif volba_filtru == "3":
+            SQLquery = "SELECT id, nazev, popis, stav FROM ukoly"
+            nadpis = "--- Seznam všech úkolů ---"
+         elif volba_filtru == "4":
+            return
+         else:
+            print("Neplatná volba, zkuste to znovu.")
+            continue  
+            
+         try:
+            cursor = conn.cursor()
+            if params:
+                cursor.execute(SQLquery, params)
+            else:
+                cursor.execute(SQLquery, params)
+
+            ukoly = cursor.fetchall()
+
+            print(f"\n{nadpis}")
+
+            if not ukoly:
+                print("Žádné úkoly k zobrazení")
+            else:
+                print(f"{'ID':<5}{'Název':<30}{'Stav':<15}{'Popis'}")
+                print("-" * 80)
+                for ukol in ukoly:
+                    id, nazev, popis, stav = ukol
+                    print(f"{id:<5}{nazev:<30}{stav:<15}{popis}")
+                    print("-" * 80)
+            
+         except mysql.connector.Error as e:
+            print(f"Chyba při ukládání úkolu do databáze: {e}")
+         finally:
+            cursor.close()
+     
+    
 def odstranit_ukol():
     if len(ukoly) == 0:
           print("\nSeznam úkolů je prázdný. Není co odstranit.")
