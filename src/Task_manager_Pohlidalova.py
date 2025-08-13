@@ -130,7 +130,7 @@ def hlavni_menu():
             elif volba_menu == "3":
                 aktualizovat_ukol(conn)
             elif volba_menu == "4":
-                odstranit_ukol()
+                odstranit_ukol(conn)
             elif volba_menu == "5":
                 print("Konec programu.")
                 break
@@ -239,34 +239,46 @@ def zobrazit_ukoly(conn):
          finally:
             cursor.close()
 
-def aktualizovat_ukol(conn):
+def vypis_seznam_ukolu(conn):
     if not conn or not conn.is_connected():
-        print ("Error: No database connection available to show the tasks.")
-        return 
+        print ("Error: No database connection available.")
+        return [], set()
+    
+    ukoly = []
+    valid_ids = set()    
+    
     try:
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT id, nazev, stav FROM ukoly")
         ukoly = cursor.fetchall()
 
         if not ukoly:
-            print("\nV databázi nejsou žádné úkoly, které by bylo možné aktualizovat.")
-            return
+            print("\nV databázi nejsou žádné úkoly.")
+            return [], set()
         
         print("\n--- Seznam všech úkolů ---")
         print(f"{'ID':<5}{'Název':<30}{'Stav'}")
         print("-" * 50)
         for ukol in ukoly:
             print(f"{ukol['id']:<5}{ukol['nazev']:<30}{ukol['stav']}")
+            valid_ids.add(ukol['id'])
         print("-" * 50)
-
-        valid_ids = {ukol['id'] for ukol in ukoly}
 
     except mysql.connector.Error as e:
         print (f"Chyba při načítání úkolů: {e}")
-        return
+        return [], set()
     finally:
         cursor.close()
+    
+    return ukoly, valid_ids
 
+
+def aktualizovat_ukol(conn):
+    ukoly, valid_ids = vypis_seznam_ukolu(conn)
+    
+    if not ukoly:
+        return
+    
     selected_id = None
     while True:
         input_id = input("Zadejte ID úkolu, který chcete aktualizovat (nebo 'q' pro zpět): ")
@@ -311,32 +323,42 @@ def aktualizovat_ukol(conn):
         cursor.close()
 
     
-def odstranit_ukol():
-    if len(ukoly) == 0:
-          print("\nSeznam úkolů je prázdný. Není co odstranit.")
-          return
-    i = 0
-    print("\nSeznam úkolů:")
-    for ukol in ukoly:
-        print(f"{i+1}. {ukol["nazev"]} - {ukol["popis"]}")
-        i = i + 1
+def odstranit_ukol(conn):
 
-    try:   
-        vstup = input("\nZadejte číslo úkolu, který chcete odstranit: ")
-        cislo = int(vstup)
-
-        if 1 <= cislo <= len(ukoly):
-            odstraneny_ukol = ukoly.pop(cislo - 1)
-            print(f"Úkol '{odstraneny_ukol['nazev']}' byl odstraněn.")
-
-        else:
-            if len(ukoly) == 1:
-                print(f"Neplatné číslo! V seznamu máte pouze {len(ukoly)} úkol.")
+    ukoly, valid_ids = vypis_seznam_ukolu(conn)
+    if not ukoly:
+        return
+    
+        
+    selected_id = None
+    while True:
+        input_id = input("Zadejte ID úkolu, který chcete odstranit (nebo 'q' pro zpět): ")
+        if input_id.lower() == 'q':
+            return
+        
+        try:
+            selected_id = int(input_id)
+            if selected_id in valid_ids:
+                break
             else:
-                print(f"Neplatné číslo! Zadejte číslo mezi 1 a {len(ukoly)}.")
+                print("Chyba: Zadané ID neexistuje. Zkuste to znovu.")
+        except ValueError:
+            print("Chyba: Musíte zadat platné číslo ID.")
 
-    except ValueError:
-         print(f"Chyba: {vstup} není platné číslo.")
+    user_confirmation = input(f"Opravdu chcete trvale odstranit úkol s ID {selected_id}? (ano/ne): ").lower()
+    if user_confirmation == 'ano':
+        try:
+            cursor = conn.cursor()
+            SQL_query = "DELETE FROM ukoly WHERE id = %s"
+            cursor.execute(SQL_query, (selected_id,))
+            conn.commit()
+            print(f"Úkol s ID {selected_id} byl úspěšně odstraněn.")
+        except mysql.connector.Error as e:
+            print(f"Chyba při odstraňování úkolu z databáze: {e}")
+        finally:
+            cursor.close()
+    else:
+        print("Odstranění úkolu zrušeno.")    
             
 if __name__ == "__main__":
      hlavni_menu()
