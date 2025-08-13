@@ -127,6 +127,8 @@ def hlavni_menu():
                      pridat_ukol_save_task_to_database(conn, task_data)
             elif volba_menu == "2":
                 zobrazit_ukoly(conn)
+            elif volba_menu == "3":
+                aktualizovat_ukol(conn)
             elif volba_menu == "4":
                 odstranit_ukol()
             elif volba_menu == "5":
@@ -236,7 +238,78 @@ def zobrazit_ukoly(conn):
             print(f"Chyba při ukládání úkolu do databáze: {e}")
          finally:
             cursor.close()
-     
+
+def aktualizovat_ukol(conn):
+    if not conn or not conn.is_connected():
+        print ("Error: No database connection available to show the tasks.")
+        return 
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id, nazev, stav FROM ukoly")
+        ukoly = cursor.fetchall()
+
+        if not ukoly:
+            print("\nV databázi nejsou žádné úkoly, které by bylo možné aktualizovat.")
+            return
+        
+        print("\n--- Seznam všech úkolů ---")
+        print(f"{'ID':<5}{'Název':<30}{'Stav'}")
+        print("-" * 50)
+        for ukol in ukoly:
+            print(f"{ukol['id']:<5}{ukol['nazev']:<30}{ukol['stav']}")
+        print("-" * 50)
+
+        valid_ids = {ukol['id'] for ukol in ukoly}
+
+    except mysql.connector.Error as e:
+        print (f"Chyba při načítání úkolů: {e}")
+        return
+    finally:
+        cursor.close()
+
+    selected_id = None
+    while True:
+        input_id = input("Zadejte ID úkolu, který chcete aktualizovat (nebo 'q' pro zpět): ")
+        if input_id.lower() == 'q':
+            return
+        
+        try:
+            selected_id = int(input_id)
+            if selected_id in valid_ids:
+                break
+            else:
+                print("Chyba: Zadané ID neexistuje. Zkuste to znovu.")
+        except ValueError:
+            print("Chyba: Musíte zadat platné číslo ID.")
+    
+    new_status = None
+    while True:
+        print("\nVyberte nový stav úkolu:")
+        print("1. Probíhá")
+        print("2. Hotovo")
+
+        selected_status_change = input("Zadejte volbu 1 nebo 2: ")
+
+        if selected_status_change == "1":
+            new_status = 'Probíhá'
+            break
+        elif selected_status_change == "2":
+            new_status = "Hotovo"
+            break
+        else:
+            print ("Neplatna volba. Zadejte 1 nebo 2.")
+
+    try:
+        cursor = conn.cursor()
+        SQL_query = "UPDATE ukoly SET stav = %s WHERE id = %s"
+        cursor.execute(SQL_query, (new_status, input_id))
+        conn.commit()
+        print(f"\nÚkol s ID {selected_id} byl úspěšně aktualizován na stav '{new_status}'.")
+    except mysql.connector.Error as e:
+        print(f"Chyba při aktualizaci úkolu v databázi: {e}")
+    finally:
+        cursor.close()
+
     
 def odstranit_ukol():
     if len(ukoly) == 0:
