@@ -239,6 +239,7 @@ def zobrazit_ukoly(conn):
          finally:
             cursor.close()
 
+
 def vypis_seznam_ukolu(conn):
     if not conn or not conn.is_connected():
         print ("Error: No database connection available.")
@@ -311,25 +312,35 @@ def aktualizovat_ukol(conn):
         else:
             print ("Neplatna volba. Zadejte 1 nebo 2.")
 
+    aktualizovat_ukol_db(conn, selected_id, new_status)
+
+
+def aktualizovat_ukol_db(conn, task_id, new_status):
+
     try:
         cursor = conn.cursor()
         SQL_query = "UPDATE ukoly SET stav = %s WHERE id = %s"
-        cursor.execute(SQL_query, (new_status, input_id))
+        cursor.execute(SQL_query, (new_status, task_id))
         conn.commit()
-        print(f"\nÚkol s ID {selected_id} byl úspěšně aktualizován na stav '{new_status}'.")
+        if cursor.rowcount > 0:
+            print(f"\nÚkol s ID {task_id} byl úspěšně aktualizován na stav '{new_status}'.")
+            return True
+        else:
+            print(f"\nChyba: Úkol s ID {task_id} nebyl nalezen.")
+            return False
     except mysql.connector.Error as e:
         print(f"Chyba při aktualizaci úkolu v databázi: {e}")
+        return False
     finally:
         cursor.close()
 
-    
+
 def odstranit_ukol(conn):
 
     ukoly, valid_ids = vypis_seznam_ukolu(conn)
     if not ukoly:
         return
-    
-        
+         
     selected_id = None
     while True:
         input_id = input("Zadejte ID úkolu, který chcete odstranit (nebo 'q' pro zpět): ")
@@ -347,19 +358,30 @@ def odstranit_ukol(conn):
 
     user_confirmation = input(f"Opravdu chcete trvale odstranit úkol s ID {selected_id}? (ano/ne): ").lower()
     if user_confirmation == 'ano':
-        try:
-            cursor = conn.cursor()
-            SQL_query = "DELETE FROM ukoly WHERE id = %s"
-            cursor.execute(SQL_query, (selected_id,))
-            conn.commit()
-            print(f"Úkol s ID {selected_id} byl úspěšně odstraněn.")
-        except mysql.connector.Error as e:
-            print(f"Chyba při odstraňování úkolu z databáze: {e}")
-        finally:
-            cursor.close()
+        odstranit_ukol_db(conn, selected_id)
     else:
         print("Odstranění úkolu zrušeno.")    
-            
+
+def odstranit_ukol_db(conn, task_id):
+    try:
+        cursor = conn.cursor()
+        SQL_query = "DELETE FROM ukoly WHERE id = %s"
+        cursor.execute(SQL_query, (task_id,))
+        conn.commit()
+        if cursor.rowcount > 0:
+            print(f"Úkol s ID {task_id} byl úspěšně odstraněn.")
+            return True
+        else:
+            print(f"Chyba: Úkol s ID {task_id} nebyl nalezen pro odstranění.")
+            return False
+    except mysql.connector.Error as e:
+        print(f"Chyba při odstraňování úkolu z databáze: {e}")
+        return False
+    
+    finally:
+        cursor.close()
+
+
 if __name__ == "__main__":
      hlavni_menu()
 
