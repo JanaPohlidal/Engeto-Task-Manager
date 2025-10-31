@@ -13,7 +13,7 @@ def prepare_testing_db_db_exists():
     db_user = os.getenv("DB_USER")
     db_password = os.getenv("DB_PASSWORD")
     original_db_name = os.getenv("DB_NAME")
-    test_db_name = f"{os.getenv('DB_NAME')}_test_db_exists"
+    test_db_name = "task_manager_test_db_exists"
 
     os.environ["DB_NAME"] = test_db_name
 

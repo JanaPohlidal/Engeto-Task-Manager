@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: taskmanager_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_heslo_123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-task_manager_db}
+      MYSQL_USER: ${MYSQL_USER:-task_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-task_heslo_123}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_heslo_123}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - taskmanager_network
+
+  app:
+    build: .
+    container_name: taskmanager_app
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${MYSQL_USER:-task_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-task_heslo_123}
+      DB_NAME: ${MYSQL_DATABASE:-task_manager_db}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    stdin_open: true
+    tty: true
+    networks:
+      - taskmanager_network
+    command: python src/Task_manager_Pohlidalova.py
+
+volumes:
+  mysql_data:
+
+networks:
+  taskmanager_network:
+    driver: bridge

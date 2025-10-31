@@ -1,0 +1,9 @@
+.git
+.gitignore
+.dockerignore
+__pycache__/
+*.pyc
+.pytest_cache/
+*.xlsx
+.env
+Task_manager_test_scenarios_Pohlidalova.xlsx
