@@ -118,7 +118,7 @@ def hlavni_menu():
             print("4. Odstranit úkol")
             print("5. Konec programu")
 
-            volba_menu = input("\nVyberte možnost (1-4): ")
+            volba_menu = input("\nVyberte možnost (1-5): ")
 
             if volba_menu == "1":
                 task_data = pridat_ukol_get_data_from_user()
@@ -135,7 +135,7 @@ def hlavni_menu():
                 print("Konec programu.")
                 break
             else:
-                print("Neplatná volba! Zadejte číslo 1-4.")
+                print("Neplatná volba! Zadejte číslo 1-5.")
 
 def pridat_ukol_get_data_from_user():
     """
@@ -227,12 +227,14 @@ def zobrazit_ukoly(conn):
             if not ukoly:
                 print("Žádné úkoly k zobrazení")
             else:
-                print(f"{'ID':<5}{'Název':<30}{'Stav':<15}{'Popis'}")
-                print("-" * 80)
+                print(f"{'ID':<5}{'Název':<30}{'Stav':<15}{'Popis':<40}")
+                print("-" * 90)
                 for ukol in ukoly:
                     id, nazev, popis, stav = ukol
-                    print(f"{id:<5}{nazev:<30}{stav:<15}{popis}")
-                    print("-" * 80)
+                    nazev_short = (nazev[:27] + '...') if len(nazev) > 30 else nazev
+                    popis_short = (popis[:37] + '...') if len(popis) > 40 else popis
+                    print(f"{id:<5}{nazev_short:<30}{stav:<15}{popis_short:<40}")
+                print("-" * 90)
             
          except mysql.connector.Error as e:
             print(f"Chyba při ukládání úkolu do databáze: {e}")
